@@ -4,33 +4,45 @@
  * @param {string} [param="asc"] param - the sorting type "asc" or "desc"
  * @returns {string[]}
  */
-//export function sortStrings(arr, param = 'asc') {
-function sortStrings(arr, param) {
+
+export function sortStrings(arr, param = 'asc') {
+
+  const enLang = ['65', '122'];
+  const ruLang = ['1025', '1105'];
+  let locale = '';
+  const sorted = [];
+
+
+  for (let i = 0; i < arr.length; i++) {
+    sorted.push(arr[i]);
+  }
+
+  if (sorted[0].charCodeAt(0) > enLang[0] && sorted[0].charCodeAt(0) < enLang[1]) {
+    locale = 'en';
+  } else if (sorted[0].charCodeAt(0) > ruLang[0] && sorted[0].charCodeAt(0) < ruLang[1]) {
+    locale = 'ru';
+  } else {
+    alert('Допускаются только русский и английский языки');
+    return sorted;
+  }
 
   for (let j = arr.length - 1 ; j > 0; j--) {
     for (let i = 0; i < j; i++) {
       if (param === 'asc') {
-        if (new Intl.Collator('ru', {caseFirst: 'upper'}).compare(arr[i], arr[i + 1]) > 0) {
-          let buf = arr[i];
-          arr[i] = arr[i + 1];
-          arr[i + 1] = buf;
+        if (new Intl.Collator(locale, {caseFirst: 'upper'}).compare(sorted[i], sorted[i + 1]) > 0) {
+          let buf = sorted[i];
+          sorted[i] = sorted[i + 1];
+          sorted[i + 1] = buf;
         }
       } else {
-        if (new Intl.Collator('ru', {caseFirst: 'lower'}).compare(arr[i], arr[i + 1]) < 0) {
-          let buf = arr[i];
-          arr[i] = arr[i + 1];
-          arr[i + 1] = buf;
+        if (new Intl.Collator(locale, {caseFirst: 'lower'}).compare(sorted[i], sorted[i + 1]) < 0) {
+          let buf = sorted[i];
+          sorted[i] = sorted[i + 1];
+          sorted[i + 1] = buf;
         }
       }
     }
   }
 
-  console.log(arr)
+  return sorted;
 }
-
-//вот это, как и индекс, нужно будет удалить
-sortStrings(['абрикос', 'Абрикос', 'яблоко', 'Яблоко', 'вишня', 'ёжик', 'Ёжик'], 'asc');
-sortStrings(['абрикос', 'Абрикос', 'яблоко', 'Яблоко', 'Вишня', 'Вишня', 'вишня', 'груша', 'ёжик', 'Ёжик'], 'desc');
-
-sortStrings(['b', 'a', 'B', 'C', 'c'], 'asc'); // ['a', 'b', 'c']
-sortStrings(['b', 'a', 'A', 'c'], 'desc'); // ['c', 'b', 'a']
