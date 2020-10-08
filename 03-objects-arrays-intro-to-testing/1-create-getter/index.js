@@ -5,16 +5,24 @@
  */
 //export function createGetter(path) {
 function createGetter(path) {
+  let newPath = path.split('.');
 
+  return function getter(product) {
+
+  };
 }
 
 ///
 const product = {
   category: {
-    title: "Goods"
+    title: "Goods",
+    prices: {
+      rub: '100',
+      eur: '1'
+    }
   }
 };
 
 const getter = createGetter('category.title');
 
-console.log(getter(product));
+getter(product)
