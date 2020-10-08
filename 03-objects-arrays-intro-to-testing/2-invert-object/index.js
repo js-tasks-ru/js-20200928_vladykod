@@ -6,7 +6,7 @@
 
 export function invertObj(obj) {
 
-  if (!obj) return undefined;
+  if (!obj) return;
 
   let map = new Map();
   let newObj = {};

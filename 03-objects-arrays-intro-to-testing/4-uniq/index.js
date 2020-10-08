@@ -5,18 +5,5 @@
  */
 
 export function uniq(arr) {
-  let set = new Set();
-  let newArr = [];
-
-  if (!arr) return newArr;
-
-  for (const item of arr) {
-    set.add(item);
-  }
-  newArr = Array.from(set);
-
-  return newArr;
+  return [...new Set(arr)];
 }
-
-// правда, точно такая же задача есть в учебнике:
-// https://learn.javascript.ru/task/array-unique-map
