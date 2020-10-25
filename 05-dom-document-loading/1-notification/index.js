@@ -1,39 +1,60 @@
 export default class NotificationMessage {
+  static activeNotification;
 
-  constructor(
-    text = '',
-    obj = {}) {
-    this.text = text;
-    this.duration = obj.duration;
-    this.type = obj.type;
+  constructor(message, {
+    duration = 2000,
+    type = 'success',
+  } = {}) {
+
+    if (NotificationMessage.activeNotification) {
+      NotificationMessage.activeNotification.remove();
+    }
+
+    this.duration = duration;
+    this.durationInSeconds = (duration / 1000) + 's';
+    this.type = type;
+    this.message = message;
+
+    this.render();
   }
 
   get template() {
     return `
-      <div class="notification success" style="--value:${this.duration / 100}s">
+      <div class="notification ${this.type}" style="--value:${this.durationInSeconds}">
         <div class="timer"></div>
         <div class="inner-wrapper">
           <div class="notification-header">${this.type}</div>
           <div class="notification-body">
-            ${this.text}
+            ${this.message}
           </div>
         </div>
       </div>
     `;
   }
 
-  show() {
-    document.body.insertAdjacentHTML('beforeEnd', this.template);
 
-    let notificationArr = document.body.querySelectorAll('.notification');
-    let last = notificationArr[notificationArr.length - 1];
-
-    for (let i = 0; i < notificationArr.length - 1; i++) {
-      notificationArr[i].remove();
-    }
-
-    setTimeout(()=> {
-      last.remove();
-    }, this.duration * 10);
+  render() {
+    const element = document.createElement('div');
+    element.innerHTML = this.template;
+    this.element = element.firstElementChild;
+    NotificationMessage.activeNotification = this.element;
   }
+
+  show(parent = document.body) {
+    parent.append(this.element);
+
+    setTimeout(() => {
+      this.remove();
+    }, this.duration);
+  }
+
+  remove() {
+    this.element.remove();
+  }
+
+  destroy() {
+    this.remove();
+    NotificationMessage.activeNotification = null;
+  }
+
 }

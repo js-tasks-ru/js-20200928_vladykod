@@ -1,68 +1,127 @@
 export default class SortableTable {
+  element;
+  subElements = {};
+  headersConfig = [];
+  data = [];
 
-  constructor(
-    text = '',
-    obj = {},
-    duration = 0,
-    type = '') {
-    this.text = text;
-    this.duration = obj.duration;
-    this.type = obj.type;
+  constructor(headersConfig, {
+    data = []
+  } = {}) {
+    this.headersConfig = headersConfig;
+    this.data = data;
+
+    this.render();
   }
 
-  getColumnBody(data) {
-    const maxValue = Math.max(...data);
-    const scale = this.chartHeight / maxValue;
-
-    return data
-      .map(item => {
-        const percent = (item / maxValue * 100).toFixed(0);
-
-        return `<div style="--value: ${Math.floor(item * scale)}" data-tooltip="${percent}%"></div>`;
-      })
-      .join('');
+  getTableHeader() {
+    return `<div data-element="header" class="sortable-table__header sortable-table__row">
+      ${this.headersConfig.map(item => this.getHeaderRow(item)).join('')}
+    </div>`;
   }
 
-  getLink() {
-    return this.link ? `<a class="column-chart__link" href="${this.link}">View all</a>` : '';
-  }
-
-  get template() {
+  getHeaderRow({id, title, sortable}) {
     return `
-      <div class="column-chart column-chart_loading " style="--chart-height: ${this.chartHeight}">
-        <div class="column-chart__title">
-          Total ${this.label}
-          ${this.getLink()}
-        </div>
-        <div class="column-chart__container">
-          <div data-element="header" class="column-chart__header">
-            ${this.value}
-          </div>
-          <div data-element="body" class="column-chart__chart">
-            ${this.getColumnBody(this.data)}
-          </div>
-        </div>
+      <div class="sortable-table__cell" data-id="${id}" data-sortable="${sortable}">
+        <span>${title}</span>
+        ${this.getHeaderSortingArrow()}
       </div>
     `;
   }
 
+  getHeaderSortingArrow() {
+    return `
+      <span data-element="arrow" class="sortable-table__sort-arrow">
+        <span class="sort-arrow"></span>
+      </span>`;
+  }
+
+  getTableBody() {
+    return `
+      <div data-element="body" class="sortable-table__body">
+        ${this.getTableRows(this.data)}
+      </div>`;
+  }
+
+  getTableRows(data) {
+    return data.map(item => {
+      return `
+      <a href="/products/${item.id}" class="sortable-table__row">
+        ${this.getTableRow(item)}
+      </a>`;
+    }).join('');
+  }
+
+  getTableRow(item) {
+    const cells = this.headersConfig.map(({id, template}) => {
+      return {
+        id,
+        template
+      };
+    });
+
+    return cells.map(({id, template}) => {
+      return template
+        ? template(item[id])
+        : `<div class="sortable-table__cell">${item[id]}</div>`;
+    }).join('');
+  }
+
+  getTable() {
+    return `
+      <div class="sortable-table">
+        ${this.getTableHeader()}
+        ${this.getTableBody()}
+      </div>`;
+  }
+
   render() {
-    const element = document.createElement('div');
+    const wrapper = document.createElement('div');
 
-    element.innerHTML = this.template;
+    wrapper.innerHTML = this.getTable();
 
-    this.element = element.firstElementChild;
+    const element = wrapper.firstElementChild;
 
-    if (this.data.length) {
-      this.element.classList.remove('column-chart_loading');
-    }
+    this.element = element;
+    this.subElements = this.getSubElements(element);
+  }
 
-    this.subElements = this.getSubElements(this.element);
+  sort(field, order) {
+    const sortedData = this.sortData(field, order);
+    const allColumns = this.element.querySelectorAll('.sortable-table__cell[data-id]');
+    const currentColumn = this.element.querySelector(`.sortable-table__cell[data-id="${field}"]`);
+
+    // NOTE: Remove sorting arrow from other columns
+    allColumns.forEach(column => {
+      column.dataset.order = '';
+    });
+
+    currentColumn.dataset.order = order;
+
+    this.subElements.body.innerHTML = this.getTableRows(sortedData);
+  }
+
+  sortData(field, order) {
+    const arr = [...this.data];
+    const column = this.headersConfig.find(item => item.id === field);
+    const {sortType, customSorting} = column;
+    const direction = order === 'asc' ? 1 : -1;
+
+    return arr.sort((a, b) => {
+      switch (sortType) {
+        case 'number':
+          return direction * (a[field] - b[field]);
+        case 'string':
+          return direction * a[field].localeCompare(b[field], 'ru');
+        case 'custom':
+          return direction * customSorting(a, b);
+        default:
+          return direction * (a[field] - b[field]);
+      }
+    });
   }
 
   getSubElements(element) {
     const elements = element.querySelectorAll('[data-element]');
-
 
     return [...elements].reduce((accum, subElement) => {
       accum[subElement.dataset.element] = subElement;
@@ -71,17 +130,12 @@ export default class SortableTable {
     }, {});
   }
 
-  update(data) {
-    this.subElements.body.innerHTML = this.getColumnBody(data);
-  }
-
-  remove () {
+  remove() {
     this.element.remove();
   }
 
   destroy() {
     this.remove();
-    this.element = null;
     this.subElements = {};
   }
 }
